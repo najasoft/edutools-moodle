@@ -1,5 +1,9 @@
 # Edutools Moodle
 
+[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Moodle](https://img.shields.io/badge/moodle-3.9+-orange.svg)](https://moodle.org)
+
 Python package for interacting with Moodle Web Services API in educational contexts.
 
 ## Installation
