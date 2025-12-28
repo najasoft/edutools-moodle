@@ -84,23 +84,10 @@ class MoodleAssignments(MoodleBase):
         }
         
         response = self.call_api("mod_assign_get_submissions", params)
-        
         if "assignments" not in response or not response["assignments"]:
             return []
 
         return response["assignments"][0].get("submissions", [])
-
-    def get_assignment_submissions(self, assignment_id: int) -> List[Dict[str, Any]]:
-        """
-        Get all submissions for an assignment (alias for get_submissions).
-
-        Args:
-            assignment_id: ID of the assignment
-
-        Returns:
-            List of submission dictionaries
-        """
-        return self.get_submissions(assignment_id)
 
     def get_user_submission(self, assignment_id: int, user_id: int) -> Dict[str, Any]:
         """
@@ -113,10 +100,17 @@ class MoodleAssignments(MoodleBase):
         Returns:
             Submission dictionary or empty dict if not found
         """
-        submissions = self.get_assignment_submissions(assignment_id)
-
-        for submission in submissions:
-            if submission.get('userid') == user_id:
-                return submission
-
+        params = {
+            'assignid': assignment_id,
+            'userid': user_id
+        }
+        
+        response = self.call_api('mod_assign_get_submission_status', params)
+        
+        # Extract the last attempt submission if available
+        if isinstance(response, dict) and 'lastattempt' in response:
+            attempt = response['lastattempt']
+            if 'submission' in attempt:
+                return attempt['submission']
+        
         return {}
