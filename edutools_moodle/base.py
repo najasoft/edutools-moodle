@@ -96,8 +96,6 @@ class MoodleBase:
         if params:
             payload.update(params)
 
-        self.logger.debug(f"Calling Moodle API: {function_name}")
-
         try:
             response = self.session.post(endpoint, data=payload, timeout=self.timeout)
             response.raise_for_status()
@@ -136,7 +134,6 @@ class MoodleBase:
             MoodleAPIError: If other Moodle error in response
         """
         if response is None:
-            self.logger.warning(f"Empty response from {function_name}")
             return response
 
         # Check for Moodle exception in response
@@ -144,19 +141,36 @@ class MoodleBase:
             if 'exception' in response:
                 error_code = response.get('errorcode', '')
                 error_msg = response.get('message', 'Unknown error')
+                debug_info = response.get('debuginfo', '')
                 
-                self.logger.error(f"{function_name} returned error: {error_msg} (code: {error_code})")
+                # Build complete error message
+                full_error_msg = error_msg
+                if debug_info:
+                    full_error_msg = f"{error_msg} - {debug_info}"
+                
+                self.logger.error(f"{function_name} returned error: {full_error_msg} (code: {error_code})")
                 
                 if 'invalidtoken' in error_code or 'accessexception' in error_code:
-                    raise MoodleAuthenticationError(f"{function_name}: {error_msg}")
-                raise MoodleAPIError(f"{function_name}: {error_msg}")
+                    raise MoodleAuthenticationError(f"{function_name}: {full_error_msg}")
+                raise MoodleAPIError(f"{function_name}: {full_error_msg}")
             
-            # Log warnings if present
-            if 'warnings' in response and response['warnings']:
+            # Log warnings if present but DON'T fail
+            if 'warnings' in response and response.get('warnings'):
                 for warning in response['warnings']:
-                    self.logger.warning(f"{function_name} warning: {warning.get('message', warning)}")
-
-        self.logger.debug(f"{function_name} completed successfully")
+                    # Handle both dict and string warnings
+                    if isinstance(warning, dict):
+                        warning_msg = warning.get('message', warning.get('warningmessage', str(warning)))
+                        warning_code = warning.get('warningcode', warning.get('code', 'unknown'))
+                    else:
+                        warning_msg = str(warning)
+                        warning_code = 'unknown'
+                    
+                    self.logger.warning(f"{function_name} warning [{warning_code}]: {warning_msg}")
+                
+                # Some APIs return ONLY warnings with no data - this is still success
+                if len(response) == 1 and 'warnings' in response:
+                    self.logger.info(f"{function_name} completed with warnings only (operation likely succeeded)")
+        
         return response
 
     def close(self):

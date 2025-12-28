@@ -117,7 +117,7 @@ class MoodleAPI:
                     current_parts.append(0)
                 while len(min_parts) < len(current_parts):
                     min_parts.append(0)
-                    
+              
                 return current_parts >= min_parts
         except Exception:
             pass
