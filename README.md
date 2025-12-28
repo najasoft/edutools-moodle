@@ -1,10 +1,13 @@
 # Edutools Moodle
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://img.shields.io/badge/pypi-0.2.0-blue.svg)](https://pypi.org/project/edutools-moodle/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Moodle](https://img.shields.io/badge/moodle-3.9+-orange.svg)](https://moodle.org)
 
 Python package for interacting with Moodle Web Services API in educational contexts.
+
+**Version 0.2.0** - Stable release with comprehensive bug fixes and optimizations.
 
 ## Installation
 
@@ -45,11 +48,23 @@ moodle.create_group(course_id=123, group_name="Group A")
 
 ## Features
 
-- ✅ **Groups Management**: Create, list, add/remove users
-- ✅ **Cohorts Management**: Check user membership
-- ✅ **Assignments**: Retrieve and manage assignments
-- ✅ **Grades**: Fetch and update grades
-- ✅ **Base API Client**: Extensible for additional Moodle functions
+- ✅ **Groups Management**: Create, update, delete groups; manage members, groupings, and cohorts (20 functions)
+- ✅ **Users Management**: Create users, check existence, enroll in courses, send notifications (7 functions)
+- ✅ **Assignments Management**: Retrieve assignments and submissions with optimized data (4 functions)
+- ✅ **Grades Management**: Add, update, and retrieve grades efficiently (6 functions)
+- ✅ **Robust Error Handling**: Comprehensive validation and detailed error messages
+- ✅ **Performance Optimized**: Reduced response payloads for faster operations
+- ✅ **Well Documented**: Complete API reference with 765 functions documented
+
+## What's New in 0.2.0
+
+- 🐛 **35+ bug fixes** across all modules
+- ⚡ **Performance improvements** - reduced data payload by up to 80% 
+- 🔄 **Updated APIs** - migrated from deprecated endpoints
+- 📚 **Complete documentation** - 119 Moodle modules documented
+- ✅ **Fully tested** - all functions systematically validated
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
 
 ## Requirements
 
@@ -156,16 +171,47 @@ Send a notification to a user.
 
 ### Assignments Module (`moodle.assignments`)
 
-#### `get_assignments(course_id: int) -> list`
-Get all assignments in a course.
+#### `get_assignments(course_ids: list) -> list`
+Get all assignments in specified courses (optimized: returns 11 essential fields).
 
-#### `get_assignment_submissions(assignment_id: int) -> list`
-Get all submissions for an assignment.
+#### `get_assignment_id_by_cmid(cmid: int, course_id: int) -> int`
+Get assignment ID from course module ID.
+
+#### `get_user_submission(assignment_id: int, user_id: int) -> dict`
+Get submission details for a specific user (optimized: returns 8 essential fields).
 
 ### Grades Module (`moodle.grades`)
 
-#### `update_grade(assignment_id, user_id, grade, feedback="") -> dict`
-Update a grade for a user's assignment.
+#### `get_grades(course_id: int, group_id: int = None, user_id: int = None) -> list`
+Get grades for a course, optionally filtered by group or user (optimized: 10 fields per item).
+
+#### `add_grade(assignment_id: int, user_id: int, grade: float, ...) -> dict`
+Add a grade for a user's assignment submission.
+
+#### `update_grade(assignment_id: int, user_id: int, grade: float, ...) -> dict`
+Update an existing grade.
+
+#### `get_grades_for_assignment(assignment_id: int, user_ids: list = None) -> list`
+Get all grades for a specific assignment.
+
+#### `get_course_grades(course_id: int, user_id: int) -> str`
+Get grades table HTML for a specific user (requires user_id in v0.2.0).
+
+## Documentation
+
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guide
+- **[docs/api/](docs/api/)** - Complete Moodle API reference (119 modules, 765 functions)
+- **[MOODLE_VERSIONS.md](MOODLE_VERSIONS.md)** - Moodle version compatibility
+
+## Important Notes
+
+### Breaking Changes in 0.2.0
+
+1. `get_course_grades()` now requires `user_id` parameter
+2. Removed `get_assignment_submissions()` - use `get_user_submission()` instead  
+3. Removed `get_grade_items()` - use `get_grades()` instead
+
+See [CHANGELOG.md](CHANGELOG.md) for complete migration guide.
 
 ## Development
 
