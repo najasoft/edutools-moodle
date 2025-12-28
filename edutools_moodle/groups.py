@@ -26,7 +26,7 @@ class MoodleGroups(MoodleBase):
             List of group dictionaries
         """
         params = {'courseid': course_id}
-        return self.call_api('core_group_get_groups', params)
+        return self.call_api('core_group_get_course_groups', params)
 
     def get_group_by_name(self, course_id: int, group_name: str) -> Optional[Dict[str, Any]]:
         """
@@ -57,7 +57,7 @@ class MoodleGroups(MoodleBase):
             Group ID if found, None otherwise
         """
         params = {'courseid': course_id}
-        response = self.call_api('core_group_get_groups', params)
+        response = self.call_api('core_group_get_course_groups', params)
 
         for group in response:
             if group.get('name') == group_name:
@@ -128,28 +128,13 @@ class MoodleGroups(MoodleBase):
             user_id: ID of the user
 
         Returns:
-            API response with warnings if any
-
-        Raises:
-            Exception: If the removal operation fails
+            API response
         """
-        try:
-            params = {
-                'members[0][groupid]': group_id,
-                'members[0][userid]': user_id,
-            }
-
-            response = self.call_api('core_group_delete_group_members', params)
-
-            if 'warnings' in response and response['warnings']:
-                self.logger.warning(f"Warnings when removing user {user_id} from group {group_id}: {response['warnings']}")
-            else:
-                self.logger.info(f"User {user_id} successfully removed from group {group_id}")
-
-            return response
-
-        except Exception as e:
-            raise Exception(f"Error removing user {user_id} from group {group_id}: {e}")
+        params = {
+            'members[0][groupid]': group_id,
+            'members[0][userid]': user_id,
+        }
+        return self.call_api('core_group_delete_group_members', params)
 
     def get_group_members(self, group_id: int) -> List[int]:
         """
@@ -181,13 +166,21 @@ class MoodleGroups(MoodleBase):
         Returns:
             List of dictionaries with user information (id, fullname, email, etc.)
         """
-        params = {'groupids[0]': group_id}
-        response = self.call_api('core_group_get_group_members', params)
-
-        if isinstance(response, list) and response:
-            return response[0].get('users', [])
-
-        return []
+        # First get the user IDs
+        user_ids = self.get_group_members(group_id)
+        
+        if not user_ids:
+            return []
+        
+        # Get detailed info for each user
+        params = {}
+        params['field'] = 'id'
+        for i, user_id in enumerate(user_ids):
+            params[f'values[{i}]'] = user_id
+        
+        users_info = self.call_api('core_user_get_users_by_field', params)
+        
+        return users_info if isinstance(users_info, list) else []
 
     def get_user_groups(self, course_id: int, user_id: int) -> List[Dict[str, Any]]:
         """
@@ -200,15 +193,28 @@ class MoodleGroups(MoodleBase):
         Returns:
             List of group dictionaries the user is a member of
         """
+        # Get all groups in the course
         all_groups = self.get_course_groups(course_id)
-        user_groups = []
-
-        for group in all_groups:
-            group_id = group.get('id')
-            if group_id and self.is_user_in_group(group_id, user_id):
-                user_groups.append(group)
-
-        return user_groups
+        
+        if not all_groups:
+            return []
+        
+        # Get members of all groups in one API call
+        params = {}
+        for i, group in enumerate(all_groups):
+            params[f'groupids[{i}]'] = group['id']
+        
+        members_response = self.call_api('core_group_get_group_members', params)
+        
+        # Build a set of group IDs where the user is a member
+        user_group_ids = set()
+        if isinstance(members_response, list):
+            for group_data in members_response:
+                if user_id in group_data.get('userids', []):
+                    user_group_ids.add(group_data.get('groupid'))
+        
+        # Filter groups where user is a member
+        return [group for group in all_groups if group.get('id') in user_group_ids]
 
     def create_or_get_group(
         self,
@@ -222,7 +228,7 @@ class MoodleGroups(MoodleBase):
         Args:
             course_id: ID of the course
             group_name: Name of the group
-            description: Optional description
+            description: Optional description (defaults to group_name if empty)
 
         Returns:
             Group ID (existing or newly created)
@@ -234,6 +240,10 @@ class MoodleGroups(MoodleBase):
         existing_group = self.get_group_by_name(course_id, group_name)
         if existing_group:
             return existing_group['id']
+
+        # Use group_name as description if not provided
+        if not description:
+            description = group_name
 
         # Create new group
         response = self.create_group(course_id, group_name, description)
