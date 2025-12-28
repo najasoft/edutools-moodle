@@ -13,15 +13,15 @@ class MoodleUsers(MoodleBase):
     Class for managing users in Moodle.
     """
 
-    def get_student_name(self, user_id: int) -> Optional[str]:
+    def get_fullname(self, user_id: int) -> Optional[str]:
         """
-        Retrieve the full name of a student from Moodle.
+        Retrieve the full name of any user from Moodle.
 
         Args:
-            user_id: ID of the user
+            user_id: ID of the user (student, teacher, admin, etc.)
 
         Returns:
-            Full name (firstname + lastname) or None if not found
+            Full name (firstname + lastname) or None if user not found
         """
         response = self.call_api(
             "core_user_get_users",
@@ -64,12 +64,11 @@ class MoodleUsers(MoodleBase):
         lastname: str,
         email: str,
         city: str = "Marrakech",
-        country: str = "MA",
-        send_email: bool = True
+        country: str = "MA"
     ) -> Optional[int]:
         """
         Create a new user in Moodle.
-
+        
         Args:
             username: Unique username
             password: User password
@@ -78,17 +77,30 @@ class MoodleUsers(MoodleBase):
             email: Email address
             city: City (default: Marrakech)
             country: Country code (default: MA for Morocco)
-            send_email: If True, Moodle will send a welcome email
 
         Returns:
             ID of created user or None if error occurred
         """
+        # Pre-check: Verify username doesn't already exist
+        if self.check_username_exists(username):
+            self.logger.error(f"Cannot create user: Username '{username}' already exists")
+            return None
+        
+        # Check if email already exists
+        existing_users = self.get_users_by_field('email', email)
+        if existing_users:
+            self.logger.error(f"Cannot create user: Email '{email}' already exists")
+            return None
+        
         params = {
             'users[0][username]': username,
             'users[0][password]': password,
             'users[0][firstname]': firstname,
             'users[0][lastname]': lastname,
-            'users[0][email]': email
+            'users[0][email]': email,
+            'users[0][city]': city,
+            'users[0][country]': country,
+            'users[0][mailformat]': 1  # HTML format
         }
 
         try:
@@ -97,14 +109,27 @@ class MoodleUsers(MoodleBase):
             if response and isinstance(response, list) and len(response) > 0 and 'id' in response[0]:
                 return response[0]['id']
             elif response and isinstance(response, dict) and 'exception' in response:
-                self.logger.error(f"API error for {username}: {response.get('message', 'Unknown error')}")
+                error_msg = response.get('message', 'Unknown error')
+                # Provide more specific error messages
+                if 'username' in error_msg.lower():
+                    self.logger.error(f"Username '{username}' already exists or is invalid")
+                elif 'email' in error_msg.lower():
+                    self.logger.error(f"Email '{email}' already exists or is invalid")
+                else:
+                    self.logger.error(f"API error for {username}: {error_msg}")
                 return None
             else:
                 self.logger.error(f"Error creating user {username}: {response}")
                 return None
 
         except Exception as e:
-            self.logger.error(f"Error creating user {username}: {e}")
+            error_str = str(e)
+            if 'username' in error_str.lower():
+                self.logger.error(f"Username '{username}' already exists or is invalid")
+            elif 'email' in error_str.lower():
+                self.logger.error(f"Email '{email}' already exists or is invalid")
+            else:
+                self.logger.error(f"Error creating user {username}: {e}")
             return None
 
     def check_username_exists(self, username: str) -> bool:
@@ -128,13 +153,12 @@ class MoodleUsers(MoodleBase):
             self.logger.error(f"Error checking username {username}: {e}")
             return False
 
-    def send_notification(self, user_id: int, subject: str, message: str) -> bool:
+    def send_notification(self, user_id: int, message: str) -> bool:
         """
-        Send a notification/message to a user.
+        Send an instant message to a user via Moodle messaging system.
 
         Args:
             user_id: ID of the recipient user
-            subject: Message subject
             message: Message content
 
         Returns:
@@ -142,16 +166,41 @@ class MoodleUsers(MoodleBase):
         """
         params = {
             'messages[0][touserid]': user_id,
-            'messages[0][subject]': subject,
             'messages[0][text]': message,
-            'messages[0][textformat]': 1  # Text format
+            'messages[0][textformat]': 1  # HTML format
         }
 
         try:
             response = self.call_api('core_message_send_instant_messages', params)
-            return response is not None
+            
+            # Check if response contains errors or warnings
+            if response is None:
+                self.logger.error(f"Failed to send notification to user {user_id}: No response from API")
+                return False
+            
+            # Check for msgid (message ID) which indicates success
+            if isinstance(response, list) and len(response) > 0:
+                if 'msgid' in response[0] and response[0]['msgid'] > 0:
+                    return True
+                elif 'errormessage' in response[0]:
+                    self.logger.error(f"Failed to send notification to user {user_id}: {response[0]['errormessage']}")
+                    return False
+            
+            # If we can't determine success, log and return False
+            self.logger.error(f"Failed to send notification to user {user_id}: Invalid response format")
+            return False
+            
         except Exception as e:
-            self.logger.error(f"Failed to send notification to user {user_id}: {str(e).replace('core_message_send_instant_messages: ', '')}")
+            error_msg = str(e).replace('core_message_send_instant_messages: ', '')
+            
+            # Detect common Moodle error patterns (language-agnostic)
+            error_lower = error_msg.lower()
+            if 'not exist' in error_lower or 'existe pas' in error_lower:
+                self.logger.error(f"Failed to send notification to user {user_id}: User does not exist")
+            elif 'cannot send' in error_lower or 'ne pouvez pas' in error_lower:
+                self.logger.error(f"Failed to send notification to user {user_id}: Cannot send message to this user")
+            else:
+                self.logger.error(f"Failed to send notification to user {user_id}: {error_msg}")
             return False
 
     def enroll_user_in_course(
