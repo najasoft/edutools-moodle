@@ -119,29 +119,72 @@ class MoodleGrades(MoodleBase):
 
         return self.call_api('mod_assign_save_grades', params)
 
-    def get_grades(self, course_id: int, user_id: int = None) -> List[Dict[str, Any]]:
+    def get_grades(
+        self, 
+        course_id: int, 
+        group_id: Optional[int] = None,
+        user_id: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Get grades for a course, optionally filtered by user.
+        Get grades for a course, optionally filtered by group or user.
 
         Args:
             course_id: ID of the course
-            user_id: Optional user ID to filter grades
+            group_id: Optional group ID to get grades for all users in a group
+            user_id: Optional user ID to get grades for a specific user
 
         Returns:
-            List of grade dictionaries
+            List of user grade dictionaries with simplified essential fields
         """
         params = {'courseid': course_id}
+        if group_id:
+            params['groupid'] = group_id
         if user_id:
             params['userid'] = user_id
 
-        response = self.call_api('core_grades_get_grades', params)
-        return response if isinstance(response, list) else []
+        response = self.call_api('gradereport_user_get_grade_items', params)
+        
+        if isinstance(response, dict) and 'usergrades' in response:
+            usergrades = response['usergrades']
+            
+            # Return only essential fields
+            simplified_grades = []
+            for usergrade in usergrades:
+                simplified_user = {
+                    'userid': usergrade.get('userid'),
+                    'userfullname': usergrade.get('userfullname'),
+                    'gradeitems': []
+                }
+                
+                for item in usergrade.get('gradeitems', []):
+                    simplified_item = {
+                        'id': item.get('id'),
+                        'itemname': item.get('itemname'),
+                        'itemtype': item.get('itemtype'),
+                        'itemmodule': item.get('itemmodule'),
+                        'cmid': item.get('cmid'),
+                        'graderaw': item.get('graderaw'),
+                        'gradeformatted': item.get('gradeformatted'),
+                        'grademin': item.get('grademin'),
+                        'grademax': item.get('grademax'),
+                        'feedback': item.get('feedback', '')
+                    }
+                    simplified_user['gradeitems'].append(simplified_item)
+                
+                simplified_grades.append(simplified_user)
+            
+            return simplified_grades
+        
+        return []
 
     def update_grade(
         self,
         assignment_id: int,
         user_id: int,
         grade: float,
+        attempt_number: int = -1,
+        add_attempt: int = 0,
+        workflow_state: str = "released",
         feedback: str = ""
     ) -> Dict[str, Any]:
         """
@@ -151,6 +194,9 @@ class MoodleGrades(MoodleBase):
             assignment_id: ID of the assignment
             user_id: ID of the user
             grade: Grade value
+            attempt_number: Attempt number (-1 for current attempt)
+            add_attempt: Whether to create a new attempt (0 or 1)
+            workflow_state: Workflow state (e.g., "released", "draft")
             feedback: Optional feedback text
 
         Returns:
@@ -158,44 +204,41 @@ class MoodleGrades(MoodleBase):
         """
         params = {
             'assignmentid': assignment_id,
-            'userid': user_id,
-            'grade': grade,
+            'applytoall': 1,
+            'grades[0][userid]': user_id,
+            'grades[0][grade]': grade,
+            'grades[0][attemptnumber]': attempt_number,
+            'grades[0][addattempt]': add_attempt,
+            'grades[0][workflowstate]': workflow_state,
+            # Always include feedback structure to avoid NULL errors
+            'grades[0][plugindata][assignfeedbackcomments_editor][text]': feedback,
+            'grades[0][plugindata][assignfeedbackcomments_editor][format]': 1  # HTML format
         }
-        if feedback:
-            params['feedback'] = feedback
 
-        return self.call_api('mod_assign_save_grade', params)
+        return self.call_api('mod_assign_save_grades', params)
 
-    def get_course_grades(self, course_id: int) -> Dict[str, Any]:
+    def get_course_grades(self, course_id: int, user_id: int) -> Dict[str, Any]:
         """
-        Get all grades for a course.
+        Get grades table for a specific user in a course.
 
         Args:
             course_id: ID of the course
+            user_id: ID of the user (required to avoid timeout on large courses)
 
         Returns:
-            Dictionary with grade information
+            Dictionary with grade table information for the user
+            
+        Note:
+            This API returns formatted grade table data. For raw grade data,
+            use get_grades() instead which is more flexible and efficient.
         """
-        params = {'courseid': course_id}
+        params = {
+            'courseid': course_id,
+            'userid': user_id
+        }
         return self.call_api('gradereport_user_get_grades_table', params)
 
-    def get_grade_items(self, course_id: int) -> List[Dict[str, Any]]:
-        """
-        Get all grade items (assignments, quizzes, etc.) for a course.
-
-        Args:
-            course_id: ID of the course
-
-        Returns:
-            List of grade item dictionaries with structure information
-        """
-        params = {'courseid': course_id}
-        response = self.call_api('core_grades_get_grade_items', params)
-        
-        if isinstance(response, dict) and 'gradeItems' in response:
-            return response['gradeItems']
-        
-        return []
+    # get_grade_items removed - API not available or not needed
 
     def get_grades_for_assignment(
         self,
