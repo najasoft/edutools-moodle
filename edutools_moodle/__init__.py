@@ -27,7 +27,7 @@ from .assignments import MoodleAssignments
 from .grades import MoodleGrades
 from .users import MoodleUsers
 
-__version__ = "0.1.0"
+__version__ = "0.2.1"
 __author__ = "Nadiri Abdeljalil"
 __email__ = "nadiri@najasoft.com"
 

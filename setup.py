@@ -5,8 +5,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="edutools-moodle",
-    version="0.2.0",
+    version="0.2.1",
     packages=find_packages(),
+    package_data={
+        "edutools_moodle": ["py.typed"],
+    },
     install_requires=[
         "requests>=2.28.0",
     ],

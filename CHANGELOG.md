@@ -5,6 +5,13 @@ All notable changes to the edutools-moodle package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2024-12-29
+
+### Added
+- PEP 561 compliance with `py.typed` marker file for full IDE IntelliSense support
+- Type hints recognition in VSCode, PyCharm, and other IDEs
+- Enhanced autocomplete and function signature hints
+
 ## [0.2.0] - 2024-12-29
 
 ### Fixed
