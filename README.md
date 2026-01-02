@@ -1,13 +1,13 @@
 # Edutools Moodle
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://img.shields.io/badge/pypi-0.2.0-blue.svg)](https://pypi.org/project/edutools-moodle/)
+[![PyPI version](https://img.shields.io/badge/pypi-0.3.0-blue.svg)](https://pypi.org/project/edutools-moodle/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Moodle](https://img.shields.io/badge/moodle-3.9+-orange.svg)](https://moodle.org)
 
 Python package for interacting with Moodle Web Services API in educational contexts.
 
-**Version 0.2.0** - Stable release with comprehensive bug fixes and optimizations.
+**Version 0.3.0** - Added comprehensive course management module with 11 new methods.
 
 ## Installation
 
@@ -36,18 +36,25 @@ moodle = MoodleAPI(
     token="your_webservice_token"
 )
 
-# Get groups for a course
-groups = moodle.get_course_groups(course_id=123)
+# Get user's enrolled courses
+courses = moodle.courses.get_user_courses()
 
-# Add a user to a group
-moodle.add_user_to_group(group_id=1, user_id=42)
+# Get enrolled students in a course
+users = moodle.courses.get_enrolled_users(course_id=123)
 
-# Create a new group
-moodle.create_group(course_id=123, group_name="Group A")
+# Get course groups
+groups = moodle.groups.get_course_groups(course_id=123)
+
+# Get assignments for a course
+assignments = moodle.assignments.get_assignments(course_id=123)
+
+# Get submissions for an assignment
+submissions = moodle.grades.get_submissions(assignment_id=456)
 ```
 
 ## Features
 
+- ✅ **Courses Management**: Get courses, enrollments, contents, search (11 functions) - **NEW in 0.3.0**
 - ✅ **Groups Management**: Create, update, delete groups; manage members, groupings, and cohorts (20 functions)
 - ✅ **Users Management**: Create users, check existence, enroll in courses, send notifications (7 functions)
 - ✅ **Assignments Management**: Retrieve assignments and submissions with optimized data (4 functions)
@@ -56,13 +63,15 @@ moodle.create_group(course_id=123, group_name="Group A")
 - ✅ **Performance Optimized**: Reduced response payloads for faster operations
 - ✅ **Well Documented**: Complete API reference with 765 functions documented
 
-## What's New in 0.2.0
+## What's New in 0.3.0
 
-- 🐛 **35+ bug fixes** across all modules
-- ⚡ **Performance improvements** - reduced data payload by up to 80% 
-- 🔄 **Updated APIs** - migrated from deprecated endpoints
-- 📚 **Complete documentation** - 119 Moodle modules documented
-- ✅ **Fully tested** - all functions systematically validated
+- 🎓 **New MoodleCourses Module**: Comprehensive course management with 11 methods
+  - Get user courses and enrollments
+  - Search and filter courses
+  - Get course contents and modules
+  - Manage course categories
+- 📋 **Permission Documentation**: Complete list of required Moodle web services (PERMISSIONS.md)
+- ✅ **Fully Tested**: 18 automated tests + 10 exploratory tests for the new module
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
 
@@ -130,10 +139,92 @@ Get Moodle site information including version.
 Check if Moodle version meets minimum requirement.
 
 **Modules:**
+- `moodle.courses` - **NEW in 0.3.0**: Course and enrollment management
 - `moodle.groups` - Groups, groupings, and cohorts
 - `moodle.users` - User management
 - `moodle.assignments` - Assignments and submissions
 - `moodle.grades` - Grade management
+
+### Courses Module (`moodle.courses`) - **NEW in 0.3.0**
+
+#### `get_user_courses(user_id: Optional[int] = None) -> list`
+Get courses enrolled by a user. If user_id is None, gets courses for the authenticated user.
+
+**Example:**
+```python
+courses = moodle.courses.get_user_courses()
+for course in courses:
+    print(f"{course['fullname']} (ID: {course['id']})")
+```
+
+#### `get_enrolled_users(course_id: int, options: Optional[list] = None) -> list`
+Get all users enrolled in a course.
+
+**Options:**
+- `onlyactive`: Only active enrollments
+- `userfields`: Additional user fields to include
+- `withcapability`: Filter by capability
+
+**Example:**
+```python
+# Get only active students
+options = [{'name': 'onlyactive', 'value': 1}]
+users = moodle.courses.get_enrolled_users(123, options=options)
+```
+
+#### `get_course_by_field(field: str, value: any) -> list`
+Get courses by specific field (id, shortname, idnumber, category).
+
+**Example:**
+```python
+courses = moodle.courses.get_course_by_field('shortname', 'CS101')
+```
+
+#### `get_categories(criteria: Optional[list] = None, add_subcategories: bool = True) -> list`
+Get all course categories.
+
+#### `get_course_contents(course_id: int, options: Optional[list] = None) -> list`
+Get complete course contents (sections, modules, resources).
+
+**Example:**
+```python
+contents = moodle.courses.get_course_contents(123)
+for section in contents:
+    print(f"Section: {section['name']}")
+    for module in section.get('modules', []):
+        print(f"  - {module['name']} ({module['modname']})")
+```
+
+#### `get_recent_courses(user_id: Optional[int] = None, limit: int = 10) -> list`
+Get recently accessed courses for a user.
+
+#### `search_courses(search: str, page: int = 0, perpage: int = 20) -> dict`
+Search courses by name or summary.
+
+**Example:**
+```python
+result = moodle.courses.search_courses('Python', page=0, perpage=10)
+for course in result['courses']:
+    print(course['fullname'])
+```
+
+#### `get_enrolled_users_by_capability(course_id: int, capability: str) -> list`
+Get users enrolled in a course filtered by capability.
+
+**Example:**
+```python
+# Get all students who can submit assignments
+students = moodle.courses.get_enrolled_users_by_capability(
+    course_id=123,
+    capability='mod/assign:submit'
+)
+```
+
+#### `get_course_modules(course_id: int) -> list`
+Get all activity modules in a course (assignments, quizzes, forums, etc.).
+
+#### `get_course_by_id(course_id: int) -> Optional[dict]`
+Get a single course by ID.
 
 ### Groups Module (`moodle.groups`)
 

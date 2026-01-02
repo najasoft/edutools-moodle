@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="edutools-moodle",
-    version="0.2.1",
+    version="0.3.0",
     packages=find_packages(),
     package_data={
         "edutools_moodle": ["py.typed"],

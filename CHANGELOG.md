@@ -5,6 +5,41 @@ All notable changes to the edutools-moodle package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-01-02
+
+### Added
+- **New MoodleCourses Module**: Comprehensive course management with 11 methods
+  - `get_user_courses()` - Get courses enrolled by a user (or authenticated user)
+  - `get_enrolled_users()` - Get all users enrolled in a course with optional filtering
+  - `get_course_by_field()` - Search courses by field (id, shortname, idnumber, category)
+  - `get_categories()` - Get all course categories with optional criteria
+  - `get_course_contents()` - Get complete course structure (sections, modules, resources)
+  - `get_recent_courses()` - Get recently accessed courses for a user
+  - `search_courses()` - Full-text search for courses by name/summary
+  - `get_enrolled_users_by_capability()` - Filter enrolled users by specific capability
+  - `get_course_modules()` - Extract all activity modules from course contents
+  - `get_course_by_id()` - Get a single course by its ID
+  - All methods include comprehensive error handling and type hints
+
+### Documentation
+- Added **PERMISSIONS.md**: Complete documentation of all required Moodle web service functions
+  - Per-module permission requirements (Courses, Groups, Assignments, Grades, Users)
+  - Setup instructions for Moodle administrators
+  - Minimum permissions for MoodleGrader application (8 functions)
+  - SQL verification queries for database-level checks
+  - Moodle version compatibility information (3.9+)
+
+### Changed
+- Updated `MoodleAPI` facade to include `courses` module initialization
+- Updated `__init__.py` exports to include `MoodleCourses` class
+- Updated README.md with new module documentation and examples
+- Updated version badges to 0.3.0
+
+### Testing
+- Added 18 automated unit tests for MoodleCourses module (test_courses.py)
+- Added 10 exploratory tests for manual validation (manual_test_courses.py)
+- All tests passing with 100% success rate
+
 ## [0.2.1] - 2024-12-29
 
 ### Added
