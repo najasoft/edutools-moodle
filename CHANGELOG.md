@@ -5,6 +5,18 @@ All notable changes to the edutools-moodle package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-01-02
+
+### Added
+- **MoodleGroups Module**: Added groupings management methods
+  - `get_course_groupings(course_id)` - Get all groupings in a course
+  - `get_grouping_by_name(course_id, grouping_name)` - Find a grouping by name
+  - Support for filtering groups by grouping membership
+
+### Improved
+- Better grouping support for class/group organization
+- Enhanced group filtering capabilities
+
 ## [0.3.0] - 2025-01-02
 
 ### Added

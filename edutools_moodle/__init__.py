@@ -1,11 +1,13 @@
 """
 Edutools Moodle - Python package for Moodle API interactions in educational contexts.
 
+Version: 0.3.1
+
 Main exports:
     - MoodleAPI: Main facade API client (recommended)
     - MoodleBase: Base class for custom extensions
     - MoodleCourses: Course and enrollment management
-    - MoodleGroups: Groups and cohorts management
+    - MoodleGroups: Groups, groupings and cohorts management
     - MoodleAssignments: Assignments handling
     - MoodleGrades: Grades management
     - MoodleUsers: User account management
@@ -29,7 +31,7 @@ from .assignments import MoodleAssignments
 from .grades import MoodleGrades
 from .users import MoodleUsers
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __author__ = "Nadiri Abdeljalil"
 __email__ = "nadiri@najasoft.com"
 

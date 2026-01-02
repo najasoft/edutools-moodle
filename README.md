@@ -1,13 +1,13 @@
 # Edutools Moodle
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://img.shields.io/badge/pypi-0.3.0-blue.svg)](https://pypi.org/project/edutools-moodle/)
+[![PyPI version](https://img.shields.io/badge/pypi-0.3.1-blue.svg)](https://pypi.org/project/edutools-moodle/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Moodle](https://img.shields.io/badge/moodle-3.9+-orange.svg)](https://moodle.org)
 
 Python package for interacting with Moodle Web Services API in educational contexts.
 
-**Version 0.3.0** - Added comprehensive course management module with 11 new methods.
+**Version 0.3.1** - Added groupings management methods for better group organization.
 
 ## Installation
 
@@ -54,14 +54,21 @@ submissions = moodle.grades.get_submissions(assignment_id=456)
 
 ## Features
 
-- ✅ **Courses Management**: Get courses, enrollments, contents, search (11 functions) - **NEW in 0.3.0**
-- ✅ **Groups Management**: Create, update, delete groups; manage members, groupings, and cohorts (20 functions)
+- ✅ **Courses Management**: Get courses, enrollments, contents, search (11 functions)
+- ✅ **Groups Management**: Create, update, delete groups; manage members, groupings, and cohorts (22 functions) - **Enhanced in 0.3.1**
 - ✅ **Users Management**: Create users, check existence, enroll in courses, send notifications (7 functions)
 - ✅ **Assignments Management**: Retrieve assignments and submissions with optimized data (4 functions)
 - ✅ **Grades Management**: Add, update, and retrieve grades efficiently (6 functions)
 - ✅ **Robust Error Handling**: Comprehensive validation and detailed error messages
 - ✅ **Performance Optimized**: Reduced response payloads for faster operations
 - ✅ **Well Documented**: Complete API reference with 765 functions documented
+
+## What's New in 0.3.1
+
+- 📦 **Enhanced Groupings Support**: New methods for managing groupings
+  - `get_course_groupings()` - Get all groupings in a course
+  - `get_grouping_by_name()` - Find grouping by name for filtering
+  - Better support for organizing groups into categories
 
 ## What's New in 0.3.0
 

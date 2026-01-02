@@ -410,6 +410,36 @@ class MoodleGroups(MoodleBase):
 
     # ========== Groupings Methods ==========
 
+    def get_course_groupings(self, course_id: int) -> List[Dict[str, Any]]:
+        """
+        Get all groupings in a course.
+
+        Args:
+            course_id: ID of the course
+
+        Returns:
+            List of grouping dictionaries with keys: id, courseid, name, idnumber, description
+        """
+        params = {'courseid': course_id}
+        return self.call_api('core_group_get_course_groupings', params)
+
+    def get_grouping_by_name(self, course_id: int, grouping_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Find a grouping by name in a course.
+
+        Args:
+            course_id: ID of the course
+            grouping_name: Name of the grouping to find
+
+        Returns:
+            Grouping dictionary if found, None otherwise
+        """
+        groupings = self.get_course_groupings(course_id)
+        for grouping in groupings:
+            if grouping.get('name') == grouping_name:
+                return grouping
+        return None
+
     def create_or_get_grouping(
         self,
         course_id: int,
@@ -432,12 +462,9 @@ class MoodleGroups(MoodleBase):
         """
         try:
             # Check if grouping already exists
-            params_get = {'courseid': course_id}
-            response = self.call_api('core_group_get_course_groupings', params_get)
-
-            for grouping in response:
-                if grouping.get('name') == grouping_name:
-                    return grouping['id']
+            grouping = self.get_grouping_by_name(course_id, grouping_name)
+            if grouping:
+                return grouping['id']
 
             # Create grouping if it doesn't exist
             params_create = {
