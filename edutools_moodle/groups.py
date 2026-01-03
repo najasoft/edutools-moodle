@@ -486,6 +486,161 @@ class MoodleGroups(MoodleBase):
         except Exception as e:
             raise Exception(f"Error creating or retrieving grouping: {e}")
 
+    def get_grouping_groups(self, grouping_id: int) -> List[Dict[str, Any]]:
+        """
+        Get all groups that belong to a specific grouping.
+        
+        Uses core_group_get_groupings with returngroups=1 for efficient retrieval.
+
+        Args:
+            grouping_id: ID of the grouping
+
+        Returns:
+            List of group dictionaries that belong to the grouping
+        """
+        params = {
+            'groupingids[0]': grouping_id,
+            'returngroups': 1
+        }
+        
+        try:
+            result = self.call_api('core_group_get_groupings', params)
+            
+            if result and len(result) > 0:
+                grouping = result[0]
+                return grouping.get('groups', [])
+            
+            return []
+        except Exception as e:
+            raise Exception(f"Failed to get groups for grouping {grouping_id}: {e}")
+
+    def get_grouping_groups_with_members(
+        self, 
+        grouping_id: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all groups in a grouping WITH their member count.
+        
+        This is useful for identifying class groups or filtering by size.
+
+        Args:
+            grouping_id: ID of the grouping
+
+        Returns:
+            List of group dictionaries with added 'member_count' key
+        """
+        groups = self.get_grouping_groups(grouping_id)
+        
+        # Enrich each group with member count
+        for group in groups:
+            try:
+                members = self.get_group_members([group['id']])
+                group['member_count'] = len(members)
+            except Exception:
+                group['member_count'] = 0
+        
+        return groups
+
+    def get_groups_by_member_count(
+        self, 
+        course_id: int, 
+        min_members: int = 1,
+        max_members: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get groups filtered by member count.
+        
+        Useful for identifying class groups (e.g., >= 20 members) or
+        small project groups (e.g., 2-5 members).
+
+        Args:
+            course_id: ID of the course
+            min_members: Minimum number of members (default: 1)
+            max_members: Maximum number of members (optional)
+
+        Returns:
+            List of group dictionaries with 'member_count' key, filtered by size
+        """
+        all_groups = self.get_course_groups(course_id)
+        filtered_groups = []
+        
+        for group in all_groups:
+            try:
+                members = self.get_group_members([group['id']])
+                member_count = len(members)
+                group['member_count'] = member_count
+                
+                # Apply filters
+                if member_count < min_members:
+                    continue
+                if max_members is not None and member_count > max_members:
+                    continue
+                    
+                filtered_groups.append(group)
+            except Exception:
+                group['member_count'] = 0
+                # Include groups with 0 members only if min_members is 0
+                if min_members == 0:
+                    filtered_groups.append(group)
+        
+        return filtered_groups
+
+    def assign_group_to_grouping(self, grouping_id: int, group_id: int) -> bool:
+        """
+        Assign a group to a grouping.
+        
+        Requires permission: moodle/course:managegroups
+
+        Args:
+            grouping_id: ID of the grouping
+            group_id: ID of the group
+
+        Returns:
+            True if successful
+
+        Raises:
+            Exception: If the API call fails
+        """
+        params = {
+            'groupingid': grouping_id,
+            'groupid': group_id
+        }
+        
+        try:
+            self.call_api('core_group_assign_grouping', params)
+            self.logger.info(f"Assigned group {group_id} to grouping {grouping_id}")
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to assign group {group_id} to grouping {grouping_id}: {e}")
+
+    def unassign_group_from_grouping(self, grouping_id: int, group_id: int) -> bool:
+        """
+        Remove a group from a grouping.
+        
+        Requires permission: moodle/course:managegroups
+
+        Args:
+            grouping_id: ID of the grouping
+            group_id: ID of the group
+
+        Returns:
+            True if successful
+
+        Raises:
+            Exception: If the API call fails
+        """
+        params = {
+            'groupingid': grouping_id,
+            'groupid': group_id
+        }
+        
+        try:
+            self.call_api('core_group_unassign_grouping', params)
+            self.logger.info(f"Unassigned group {group_id} from grouping {grouping_id}")
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to unassign group {group_id} from grouping {grouping_id}: {e}")
+
     # ========== Cohorts Methods ==========
 
     def is_user_in_cohort(self, user_id: int, cohort_name: str = "IIR2425") -> bool:

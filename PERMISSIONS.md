@@ -22,14 +22,22 @@ Les fonctions suivantes nécessitent des permissions spécifiques dans Moodle We
 
 ## Module: MoodleGroups
 
-| Fonction | Permission Moodle requise |
-|----------|---------------------------|
-| `get_course_groups()` | `core_group_get_course_groups` |
-| `get_group_members()` | `core_group_get_group_members` |
-| `add_user_to_group()` | `core_group_add_group_members` |
-| `remove_user_from_group()` | `core_group_delete_group_members` |
-| `create_group()` | `core_group_create_groups` |
-| `delete_group()` | `core_group_delete_groups` |
+| Fonction | Permission Moodle requise | Permission utilisateur |
+|----------|---------------------------|------------------------|
+| `get_course_groups()` | `core_group_get_course_groups` | - |
+| `get_group_members()` | `core_group_get_group_members` | - |
+| `add_user_to_group()` | `core_group_add_group_members` | `moodle/course:managegroups` |
+| `remove_user_from_group()` | `core_group_delete_group_members` | `moodle/course:managegroups` |
+| `create_group()` | `core_group_create_groups` | `moodle/course:managegroups` |
+| `delete_group()` | `core_group_delete_groups` | `moodle/course:managegroups` |
+| `get_course_groupings()` | `core_group_get_course_groupings` | - |
+| `get_grouping_by_name()` | `core_group_get_course_groupings` | - |
+| `create_or_get_grouping()` | `core_group_create_groupings` | `moodle/course:managegroups` |
+| `get_grouping_groups()` | `core_group_get_course_groups` | - |
+| `get_grouping_groups_with_members()` | `core_group_get_course_groups`, `core_group_get_group_members` | - |
+| `get_groups_by_member_count()` | `core_group_get_course_groups`, `core_group_get_group_members` | - |
+| `assign_group_to_grouping()` | `core_group_assign_grouping` | `moodle/course:managegroups` |
+| `unassign_group_from_grouping()` | `core_group_unassign_grouping` | `moodle/course:managegroups` |
 
 ## Module: MoodleAssignments
 
