@@ -33,9 +33,8 @@ Les fonctions suivantes nécessitent des permissions spécifiques dans Moodle We
 | `get_course_groupings()` | `core_group_get_course_groupings` | - |
 | `get_grouping_by_name()` | `core_group_get_course_groupings` | - |
 | `create_or_get_grouping()` | `core_group_create_groupings` | `moodle/course:managegroups` |
-| `get_grouping_groups()` | `core_group_get_course_groups` | - |
-| `get_grouping_groups_with_members()` | `core_group_get_course_groups`, `core_group_get_group_members` | - |
-| `get_groups_by_member_count()` | `core_group_get_course_groups`, `core_group_get_group_members` | - |
+| `get_grouping_groups()` | `core_group_get_groupings` | - |
+| `get_grouping_groups_with_members()` | `core_group_get_groupings`, `core_group_get_group_members` | - |
 | `assign_group_to_grouping()` | `core_group_assign_grouping` | `moodle/course:managegroups` |
 | `unassign_group_from_grouping()` | `core_group_unassign_grouping` | `moodle/course:managegroups` |
 

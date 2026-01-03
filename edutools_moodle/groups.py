@@ -541,50 +541,6 @@ class MoodleGroups(MoodleBase):
         
         return groups
 
-    def get_groups_by_member_count(
-        self, 
-        course_id: int, 
-        min_members: int = 1,
-        max_members: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Get groups filtered by member count.
-        
-        Useful for identifying class groups (e.g., >= 20 members) or
-        small project groups (e.g., 2-5 members).
-
-        Args:
-            course_id: ID of the course
-            min_members: Minimum number of members (default: 1)
-            max_members: Maximum number of members (optional)
-
-        Returns:
-            List of group dictionaries with 'member_count' key, filtered by size
-        """
-        all_groups = self.get_course_groups(course_id)
-        filtered_groups = []
-        
-        for group in all_groups:
-            try:
-                members = self.get_group_members([group['id']])
-                member_count = len(members)
-                group['member_count'] = member_count
-                
-                # Apply filters
-                if member_count < min_members:
-                    continue
-                if max_members is not None and member_count > max_members:
-                    continue
-                    
-                filtered_groups.append(group)
-            except Exception:
-                group['member_count'] = 0
-                # Include groups with 0 members only if min_members is 0
-                if min_members == 0:
-                    filtered_groups.append(group)
-        
-        return filtered_groups
-
     def assign_group_to_grouping(self, grouping_id: int, group_id: int) -> bool:
         """
         Assign a group to a grouping.

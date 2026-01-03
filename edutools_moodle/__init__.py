@@ -1,7 +1,7 @@
 """
 Edutools Moodle - Python package for Moodle API interactions in educational contexts.
 
-Version: 0.3.2
+Version: 0.3.3
 
 Main exports:
     - MoodleAPI: Main facade API client (recommended)
@@ -31,7 +31,7 @@ from .assignments import MoodleAssignments
 from .grades import MoodleGrades
 from .users import MoodleUsers
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __author__ = "Nadiri Abdeljalil"
 __email__ = "nadiri@najasoft.com"
 
